@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Expense Tracker Pro</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">💸</div>
+      <div>
+        <h1>Expense Tracker Pro</h1>
+        <p class="subtitle">تتبّع مصروفاتك باحتراف</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="toggleDark" class="btn btn-ghost">🌙</button>
+      <button id="btnExportCSV" class="btn btn-sec">⬇️ CSV</button>
+      <button id="btnExportPDF" class="btn btn-sec">🧾 PDF</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Summary Cards -->
+    <section class="summary-grid">
+      <div class="card summary-card purple">
+        <div class="card-icon">💰</div>
+        <div>
+          <p class="card-label">إجمالي المصروفات</p>
+          <h2 id="totalExpenses">0.00</h2>
+        </div>
+      </div>
+      <div class="card summary-card green">
+        <div class="card-icon">📊</div>
+        <div>
+          <p class="card-label">أعلى فئة إنفاقاً</p>
+          <h2 id="topCategory">—</h2>
+        </div>
+      </div>
+      <div class="card summary-card blue">
+        <div class="card-icon">📈</div>
+        <div>
+          <p class="card-label">متوسط المصروفات</p>
+          <h2 id="avgExpense">0.00</h2>
+        </div>
+      </div>
+      <div class="card summary-card orange">
+        <div class="card-icon">🔢</div>
+        <div>
+          <p class="card-label">عدد المصروفات</p>
+          <h2 id="countExpenses">0</h2>
+        </div>
+      </div>
+    </section>
+
+    <!-- Budget -->
+    <section class="card budget-card">
+      <h3>💼 الميزانية الشهرية</h3>
+      <div class="budget-row">
+        <input id="budgetInput" type="number" min="0" step="1" placeholder="أدخل الميزانية..."/>
+        <button id="btnSaveBudget" class="btn btn-primary">حفظ</button>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <span>المستخدم: <b id="usedAmt">0</b></span>
+          <span>المتبقي: <b id="remAmt">0</b></span>
+        </div>
+        <div class="progress-bar-bg">
+          <div id="budgetBar" class="progress-bar-fill"></div>
+        </div>
+        <p id="budgetWarning" class="budget-warning" style="display:none;"></p>
+      </div>
+    </section>
+
+    <!-- Form + Filters Row -->
+    <section class="two-col">
+
+      <!-- Add Form -->
+      <div class="card">
+        <h3>➕ إضافة مصروف جديد</h3>
+        <form id="expenseForm" class="form">
+          <div class="field">
+            <label for="amount">المبلغ *</label>
+            <input id="amount" type="number" min="0.01" step="0.01" placeholder="مثال: 50" required/>
+          </div>
+          <div class="field">
+            <label for="category">الفئة *</label>
+            <select id="category" required>
+              <option value="" disabled selected>اختر الفئة</option>
+              <option value="طعام">🍔 طعام</option>
+              <option value="مواصلات">🚗 مواصلات</option>
+              <option value="فواتير">💡 فواتير</option>
+              <option value="ترفيه">🎬 ترفيه</option>
+              <option value="صحة">💊 صحة</option>
+              <option value="تعليم">📚 تعليم</option>
+              <option value="مشتريات">🛒 مشتريات</option>
+              <option value="إيجار">🏠 إيجار</option>
+              <option value="أخرى">📦 أخرى</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="date">التاريخ *</label>
+            <input id="date" type="date" required/>
+          </div>
+          <div class="field">
+            <label for="description">الوصف</label>
+            <input id="description" type="text" placeholder="وصف اختياري..."/>
+          </div>
+          <button id="submitBtn" type="submit" class="btn btn-primary btn-full">➕ إضافة مصروف</button>
+        </form>
+      </div>
+
+      <!-- Filters + Chart -->
+      <div class="card">
+        <h3>🔍 بحث وفلترة</h3>
+        <div class="field">
+          <label for="searchInput">بحث</label>
+          <input id="searchInput" type="text" placeholder="ابحث بالوصف أو الفئة..."/>
+        </div>
+        <div class="field">
+          <label for="filterCategory">فلترة حسب الفئة</label>
+          <select id="filterCategory">
+            <option value="all" selected>كل الفئات</option>
+            <option value="طعام">🍔 طعام</option>
+            <option value="مواصلات">🚗 مواصلات</option>
+            <option value="فواتير">💡 فواتير</option>
+            <option value="ترفيه">🎬 ترفيه</option>
+            <option value="صحة">💊 صحة</option>
+            <option value="تعليم">📚 تعليم</option>
+            <option value="مشتريات">🛒 مشتريات</option>
+            <option value="إيجار">🏠 إيجار</option>
+            <option value="أخرى">📦 أخرى</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sortBy">ترتيب حسب</label>
+          <select id="sortBy">
+            <option value="date-desc">التاريخ (الأحدث)</option>
+            <option value="date-asc">التاريخ (الأقدم)</option>
+            <option value="amount-desc">المبلغ (الأعلى)</option>
+            <option value="amount-asc">المبلغ (الأقل)</option>
+            <option value="category">الفئة</option>
+          </select>
+        </div>
+        <button id="btnClearFilters" class="btn btn-ghost btn-full" type="button">🧹 مسح الفلاتر</button>
+
+        <hr class="divider"/>
+        <h3>📊 توزيع المصروفات</h3>
+        <div class="chart-box">
+          <canvas id="pieChart"></canvas>
+        </div>
+        <div class="chart-box" style="margin-top:14px;">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Expenses Table -->
+    <section class="card" style="margin-top:16px;">
+      <div class="table-header">
+        <h3>📋 سجل المصروفات</h3>
+        <span class="muted" id="tableCount">0 عنصر</span>
+      </div>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>المبلغ</th>
+              <th>الفئة</th>
+              <th>التاريخ</th>
+              <th>الوصف</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>لا يوجد مصروفات بعد</p>
+        <p class="muted">أضف أول مصروف من النموذج أعلاه</p>
+      </div>
+    </section>
+
+    <!-- Demo Button -->
+    <div style="text-align:center; margin:18px 0;">
+      <button id="btnDemo" class="btn btn-sec">✨ تعبئة بيانات تجريبية</button>
+    </div>
+
+  </main>
+
+  <!-- Edit Modal -->
+  <div id="modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>✏️ تعديل مصروف</h3>
+        <button id="modalClose" class="btn btn-ghost">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label for="eAmount">المبلغ</label>
+          <input id="eAmount" type="number" min="0.01" step="0.01"/>
+        </div>
+        <div class="field">
+          <label for="eCategory">الفئة</label>
+          <select id="eCategory">
+            <option value="طعام">🍔 طعام</option>
+            <option value="مواصلات">🚗 مواصلات</option>
+            <option value="فواتير">💡 فواتير</option>
+            <option value="ترفيه">🎬 ترفيه</option>
+            <option value="صحة">💊 صحة</option>
+            <option value="تعليم">📚 تعليم</option>
+            <option value="مشتريات">🛒 مشتريات</option>
+            <option value="إيجار">🏠 إيجار</option>
+            <option value="أخرى">📦 أخرى</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="eDate">التاريخ</label>
+          <input id="eDate" type="date"/>
+        </div>
+        <div class="field">
+          <label for="eDesc">الوصف</label>
+          <input id="eDesc" type="text"/>
+        </div>
+        <p id="modalErr" class="err-msg" style="display:none;"></p>
+      </div>
+      <div class="modal-foot">
+        <button id="modalSave" class="btn btn-primary">💾 حفظ</button>
+        <button id="modalDel" class="btn btn-danger">🗑 حذف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <footer class="footer">
+    <p>Expense Tracker Pro &copy; 2025 — مشروع تقنية تصميم المواقع</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
